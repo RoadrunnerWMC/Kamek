@@ -10,6 +10,7 @@
 #define kctInjectBranch 3
 #define kctInjectCall 4
 #define kctPatchExit 5
+#define kctInjectSection 100
 
 
 #define kmIdentifier(key, counter) \
@@ -81,5 +82,24 @@
 	kmCallDefInt(__COUNTER__, addr, returnType, __VA_ARGS__)
 #define kmCallDefAsm(addr) \
 	kmCallDefInt(__COUNTER__, addr, asm void, )
+
+// kmInjectDefAsm
+//   Inject assembly code directly into the target executable,
+//   overwriting whatever's there. endAddr is exclusive. If the function
+//   is shorter than the injection region, it's padded with nops.
+#define kmInjectDefAsm5(pragmaString) _Pragma(#pragmaString)
+#define kmInjectDefAsm4(secName) \
+	kmInjectDefAsm5(section code_type #secName)
+#define kmInjectDefAsm3(counter, addr, endAddr) \
+	kmHook3(kctInjectSection, counter, (addr), (endAddr)); \
+	_Pragma("push") \
+	kmInjectDefAsm4(.km_inject_##counter) \
+	static void kmIdentifier(UserFunc, counter) (); \
+	_Pragma("pop") \
+	static asm void kmIdentifier(UserFunc, counter) ()
+#define kmInjectDefAsm2(counter, addr, endAddr) \
+	kmInjectDefAsm3(counter, addr, endAddr)
+#define kmInjectDefAsm(addr, endAddr) \
+	kmInjectDefAsm2(__COUNTER__, addr, endAddr)
 
 #endif

@@ -49,8 +49,8 @@ namespace Kamek
 
             CollectSections();
             BuildSymbolTables();
-            ProcessRelocations();
             ProcessHooks();
+            ProcessRelocations();
         }
 
         private Word _baseAddress;
@@ -453,10 +453,10 @@ namespace Kamek
 
         private bool KamekUseReloc(Elf.Reloc type, Word source, Word dest)
         {
-            if (source < _kamekStart || source >= _kamekEnd)
+            if (source.Type == WordType.AbsoluteAddr || source < _kamekStart || source >= _kamekEnd)
                 return false;
             if (type != Elf.Reloc.R_PPC_ADDR32)
-                throw new InvalidOperationException("Unsupported relocation type in the Kamek hook data section");
+                throw new InvalidOperationException($"Unsupported relocation type {type} in the Kamek hook data section");
 
             _kamekRelocations[source] = dest;
             return true;
@@ -495,10 +495,50 @@ namespace Kamek
                                 args[i] = new Word(WordType.Value, ReadUInt32(argAddr));
                         }
 
-                        _hooks.Add(new HookData { type = type, args = args });
+                        HookData hook = new HookData { type = type, args = args };
+
+                        if (type == (uint)Kamek.Hooks.HookType.kctInjectSection)
+                            ProcessSectionInjection(elf, hook);
+                        else
+                            _hooks.Add(hook);
                     }
                 }
             }
+        }
+        #endregion
+
+        #region Section Injections
+        public struct SectionInjection
+        {
+            public Word address;
+            public uint size;
+            public Elf.ElfSection section;
+        }
+
+        private List<SectionInjection> _sectionInjections = new List<SectionInjection>();
+        public IReadOnlyList<SectionInjection> SectionInjections { get { return _sectionInjections; } }
+
+        private void ProcessSectionInjection(Elf elf, HookData hook)
+        {
+            uint secId = hook.args[0].Value;
+            Word start = hook.args[1];
+            Word end = hook.args[2];
+
+            uint injSize = end.Value - start.Value;
+
+            if (start.Type == WordType.Value)
+                start = new Word(WordType.AbsoluteAddr, Mapper.Remap(start.Value));
+
+            Elf.ElfSection sec = (from s in elf.Sections
+                                  where s.name == $".km_inject_{secId}"
+                                  select s).Single();
+
+            if (sec.sh_size > injSize)
+                throw new InvalidDataException($"Injected section at 0x{start.Value:x} doesn't fit (0x{sec.sh_size:x} > 0x{injSize:x})");
+
+            _sectionInjections.Add(new SectionInjection {address=start, size=injSize, section=sec});
+            _sectionBases[sec] = start;
+
         }
         #endregion
     }

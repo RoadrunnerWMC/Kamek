@@ -7,22 +7,34 @@ using System.Threading.Tasks;
 
 namespace Kamek.Hooks
 {
+    public enum HookType : uint {
+        kctWrite = 1,
+        kctConditionalWrite = 2,
+        kctInjectBranch = 3,
+        kctInjectCall = 4,
+        kctPatchExit = 5,
+        kctInjectSection = 100
+    }
+
     abstract class Hook
     {
+
         public static Hook Create(Linker.HookData data, AddressMapper mapper)
         {
             switch (data.type)
             {
-                case 1:
+                case (uint)HookType.kctWrite:
                     return new WriteHook(false, data.args, mapper);
-                case 2:
+                case (uint)HookType.kctConditionalWrite:
                     return new WriteHook(true, data.args, mapper);
-                case 3:
+                case (uint)HookType.kctInjectBranch:
                     return new BranchHook(false, data.args, mapper);
-                case 4:
+                case (uint)HookType.kctInjectCall:
                     return new BranchHook(true, data.args, mapper);
-                case 5:
+                case (uint)HookType.kctPatchExit:
                     return new PatchExitHook(data.args, mapper);
+                case (uint)HookType.kctInjectSection:
+                    throw new InvalidOperationException("Linker is supposed to handle and remove these itself");
                 default:
                     throw new NotImplementedException("unknown command type");
             }

@@ -56,7 +56,11 @@ namespace Kamek
         }
         #endregion
 
-        private Dictionary<Word, Commands.Command> _commands;
+        private Dictionary<Word, Commands.Command> _injectionCommands;
+        private Dictionary<Word, Commands.Command> _otherCommands;
+        // note: injection commands have to come first, since relocations are applied on top of them
+        public IEnumerable<KeyValuePair<Word, Commands.Command>> _commands { get { return _injectionCommands.Concat(_otherCommands); } }
+
         private List<Hooks.Hook> _hooks;
         private Dictionary<Word, uint> _symbolSizes;
         private AddressMapper _mapper;
@@ -78,11 +82,14 @@ namespace Kamek
             _ctorEnd = linker.CtorEnd - linker.OutputStart;
 
             _hooks = new List<Hooks.Hook>();
-            _commands = new Dictionary<Word, Commands.Command>();
+            _injectionCommands = new Dictionary<Word, Commands.Command>();
+            _otherCommands = new Dictionary<Word, Commands.Command>();
 
             _symbolSizes = new Dictionary<Word, uint>();
             foreach (var pair in linker.SymbolSizes)
                 _symbolSizes.Add(pair.Key, pair.Value);
+
+            AddInjectionCommands(linker.SectionInjections);
 
             AddRelocsAsCommands(linker.Fixups);
 
@@ -91,17 +98,44 @@ namespace Kamek
             ApplyStaticCommands();
         }
 
+        private void AddInjectionCommands(IReadOnlyList<Linker.SectionInjection> injections)
+        {
+            foreach (var injection in injections)
+            {
+                for (uint offs = 0; offs < injection.size; offs += 4) {
+                    uint value;
+                    if (offs < injection.section.sh_size)
+                        value = Util.ExtractUInt32(injection.section.data, offs);
+                    else
+                        value = 0x60000000;  // nop
+
+                    Word injectionAddr = injection.address + offs;
+                    if (_injectionCommands.ContainsKey(injectionAddr))
+                        throw new InvalidOperationException(string.Format("duplicate commands for address {0}", injectionAddr));
+
+                    Commands.Command cmd = new Commands.WriteCommand(
+                        injectionAddr,
+                        new Word(WordType.Value, value),
+                        Commands.WriteCommand.Type.Value32,
+                        null);
+                    cmd.CalculateAddress(this);
+                    cmd.AssertAddressNonNull();
+                    _injectionCommands[injectionAddr] = cmd;
+                }
+            }
+        }
+
 
         private void AddRelocsAsCommands(IReadOnlyList<Linker.Fixup> relocs)
         {
             foreach (var rel in relocs)
             {
-                if (_commands.ContainsKey(rel.source))
+                if (_otherCommands.ContainsKey(rel.source))
                     throw new InvalidOperationException(string.Format("duplicate commands for address {0}", rel.source));
                 Commands.Command cmd = new Commands.RelocCommand(rel.source, rel.dest, rel.type);
                 cmd.CalculateAddress(this);
                 cmd.AssertAddressNonNull();
-                _commands[rel.source] = cmd;
+                _otherCommands[rel.source] = cmd;
             }
         }
 
@@ -113,9 +147,9 @@ namespace Kamek
             {
                 cmd.CalculateAddress(this);
                 cmd.AssertAddressNonNull();
-                if (_commands.ContainsKey(cmd.Address.Value))
+                if (_otherCommands.ContainsKey(cmd.Address.Value))
                     throw new InvalidOperationException(string.Format("duplicate commands for address {0}", cmd.Address.Value));
-                _commands[cmd.Address.Value] = cmd;
+                _otherCommands[cmd.Address.Value] = cmd;
             }
             _hooks.Add(hook);
         }
@@ -124,14 +158,17 @@ namespace Kamek
         private void ApplyStaticCommands()
         {
             // leave _commands containing just the ones we couldn't apply here
-            var original = _commands;
-            _commands = new Dictionary<Word, Commands.Command>();
-
-            foreach (var cmd in original.Values)
+            foreach (var cmdsDict in new[] {_injectionCommands, _otherCommands})
             {
-                if (!cmd.Apply(this)) {
-                    cmd.AssertAddressNonNull();
-                    _commands[cmd.Address.Value] = cmd;
+                var original = new Dictionary<Word, Commands.Command>(cmdsDict);
+                cmdsDict.Clear();
+
+                foreach (var cmd in original.Values)
+                {
+                    if (!cmd.Apply(this)) {
+                        cmd.AssertAddressNonNull();
+                        cmdsDict[cmd.Address.Value] = cmd;
+                    }
                 }
             }
         }
