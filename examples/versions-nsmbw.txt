@@ -240,12 +240,36 @@ extend J1
 80990100-*: +0x20
 
 [P3]
-# International NSMBW v3 (SMNP01 rev 3) (Wii U eShop)
+# International NSMBW v3 (SMNP01 rev 2, Wii U eShop version)
 extend P2
+80000000-801be963: +0x0
+801be964-801be967: +0xc
+801be96c-801be973: +0x8
+801be974-801be97f: -0x10
+801be980-801bed57: +0x0
+801bed58-801bed5b: +0x10
+801bed5c-801bed5f: +0x0
+801bed64-801bed6b: +0x8
+801bed6c-801bed6f: -0x14
+801bed70-801bed73: -0x10
+801bed74-801bed77: -0x4
+801bed78-*: +0x0
 
 [J3]
-# Japanese NSMBW v3 (SMNJ01 rev 3) (Wii U eShop)
+# Japanese NSMBW v3 (SMNJ01 rev 2, Wii U eShop version)
 extend J2
+80000000-801be633: +0x0
+801be634-801be637: +0xc
+801be63c-801be643: +0x8
+801be644-801be64f: -0x10
+801be650-801bea27: +0x0
+801bea28-801bea2b: +0x10
+801bea2c-801bea2f: +0x0
+801bea34-801bea3b: +0x8
+801bea3c-801bea3f: -0x14
+801bea40-801bea43: -0x10
+801bea44-801bea47: -0x4
+801bea48-*: +0x0
 
 [K]
 # South Korean NSMBW (SMNK01)
