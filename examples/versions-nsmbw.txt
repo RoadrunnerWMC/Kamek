@@ -239,6 +239,14 @@ extend J1
 807aa7fc-809900ff: +0x10
 80990100-*: +0x20
 
+[P3]
+# International NSMBW v3 (SMNP01 rev 3) (Wii U eShop)
+extend P2
+
+[J3]
+# Japanese NSMBW v3 (SMNJ01 rev 3) (Wii U eShop)
+extend J2
+
 [K]
 # South Korean NSMBW (SMNK01)
 extend P2

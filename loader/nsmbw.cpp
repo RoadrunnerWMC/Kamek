@@ -120,11 +120,30 @@ int loadIntoNSMBW()
 	switch (*((u32*)0x800CF6CC))
 	{
 		case 0x40820030: region = 'P'; version = 1; break;
-		case 0x40820038: region = 'P'; version = 2; break;
+		case 0x40820038:
+			region = 'P';
+			switch (*((u8*)0x801BE957))
+			{
+				case 0x5E: version = 2; break;
+				case 0xA0: version = 3; break;
+				default: unknownVersion();
+			}
+			break;
+
 		case 0x48000465: region = 'E'; version = 1; break;
 		case 0x2C030000: region = 'E'; version = 2; break;
+
 		case 0x480000B4: region = 'J'; version = 1; break;
-		case 0x4082000C: region = 'J'; version = 2; break;
+		case 0x4082000C:
+			region = 'J';
+			switch (*((u8*)0x801BE627))
+			{
+				case 0x5E: version = 2; break;
+				case 0xA0: version = 3; break;
+				default: unknownVersion();
+			}
+			break;
+
 		case 0x38A00001:
 			switch (*((u8*)0x8000423A))
 			{
@@ -133,6 +152,7 @@ int loadIntoNSMBW()
 				default: unknownVersion();
 			}
 			break;
+
 		default: unknownVersion();
 	}
 
@@ -152,8 +172,13 @@ int loadIntoNSMBW()
 	char path[64];
 	if (version == 0)
 		funcs->sprintf(path, "/Code/%c.bin", region);
-	else
+	else {
+		// "v3" (eShop) builds are nearly identical to v2, only
+		// differing in a tiny handful of bytes. Since the Kamekfile
+		// will always be identical to v2's, we just use that one
+		if (version == 3) version = 2;
 		funcs->sprintf(path, "/Code/%c%d.bin", region, version);
+	}
 	loadKamekBinaryFromDisc(funcs, path);
 
 	return 1;
