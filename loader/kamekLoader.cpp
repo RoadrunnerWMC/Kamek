@@ -1,6 +1,6 @@
 #include "kamekLoader.h"
 
-#define KM_FILE_VERSION 2
+#define KM_FILE_VERSION 3
 #define STRINGIFY_(x) #x
 #define STRINGIFY(x) STRINGIFY_(x)
 
@@ -24,10 +24,11 @@ struct KBHeader {
 #define kWrite32 32
 #define kWrite16 33
 #define kWrite8 34
-#define kCondWritePointer 35
-#define kCondWrite32 36
-#define kCondWrite16 37
-#define kCondWrite8 38
+#define kWriteBlob 35
+#define kCondWritePointer 36
+#define kCondWrite32 37
+#define kCondWrite16 38
+#define kCondWrite8 39
 #define kBranch 64
 #define kBranchLink 65
 
@@ -48,9 +49,9 @@ static inline u32 resolveAddress(u32 text, u32 address) {
 
 
 #define kCommandHandler(name) \
-	static inline const u8 *kHandle##name(const u8 *input, u32 text, u32 address)
+	static inline const u8 *kHandle##name(const u8 *input, u32 text, u32 address, const loaderFunctions *funcs)
 #define kDispatchCommand(name) \
-	case k##name: input = kHandle##name(input, text, address); break
+	case k##name: input = kHandle##name(input, text, address, funcs); break
 
 kCommandHandler(Addr32) {
 	u32 target = resolveAddress(text, *(const u32 *)input);
@@ -96,6 +97,13 @@ kCommandHandler(Write8) {
 	*(u8 *)address = value & 0xFF;
 	return input + 4;
 }
+kCommandHandler(WriteBlob) {
+	u32 size = *(const u32 *)input;
+	funcs->memcpy((void *)address, (const void *)(input + 4), (size_t)size);
+	u32 endOfBuffer = (u32)input + 4 + size;
+	// skip 1, 2, or 3 bytes to align to 4
+	return (const u8 *)((endOfBuffer + 3) & -4);
+}
 kCommandHandler(CondWritePointer) {
 	u32 target = resolveAddress(text, *(const u32 *)input);
 	u32 original = ((const u32 *)input)[1];
@@ -126,11 +134,11 @@ kCommandHandler(CondWrite8) {
 }
 kCommandHandler(Branch) {
 	*(u32 *)address = 0x48000000;
-	return kHandleRel24(input, text, address);
+	return kHandleRel24(input, text, address, funcs);
 }
 kCommandHandler(BranchLink) {
 	*(u32 *)address = 0x48000001;
-	return kHandleRel24(input, text, address);
+	return kHandleRel24(input, text, address, funcs);
 }
 
 
@@ -203,6 +211,7 @@ void loadKamekBinary(const loaderFunctions *funcs, const void *binary, u32 binar
 			kDispatchCommand(Write32);
 			kDispatchCommand(Write16);
 			kDispatchCommand(Write8);
+			kDispatchCommand(WriteBlob);
 			kDispatchCommand(CondWritePointer);
 			kDispatchCommand(CondWrite32);
 			kDispatchCommand(CondWrite16);

@@ -110,5 +110,90 @@ namespace Kamek
                 Console.WriteLine();
             }
         }
+
+        public static string PackLargeWriteForRiivolution(Word address, byte[] data)
+        {
+            if (address.Type == WordType.RelativeAddr)
+                throw new InvalidOperationException("cannot pack a dynamically linked data blob as a Riivolution patch");
+
+            var sb = new StringBuilder(data.Length * 2);
+            for (int i = 0; i < data.Length; i++)
+                sb.AppendFormat("{0:X2}", data[i]);
+
+            return string.Format("<memory offset='0x{0:X8}' value='{1}' />", address.Value, sb.ToString());
+        }
+
+        public static string PackLargeWriteForDolphin(Word address, byte[] data)
+        {
+            if (address.Type == WordType.RelativeAddr)
+                throw new InvalidOperationException("cannot pack a dynamically linked data blob as a Dolphin patch");
+
+            var elements = new List<string>();
+
+            int i = 0;
+            while (i < data.Length)
+            {
+                var sb = new StringBuilder(27);
+                sb.AppendFormat("0x{0:X8}:", address.Value + i);
+
+                int lineLength;
+                switch (data.Length - i)
+                {
+                    case 1:
+                        lineLength = 1;
+                        sb.Append("byte:0x000000");
+                        break;
+                    case 2:
+                    case 3:
+                        lineLength = 2;
+                        sb.Append("word:0x0000");
+                        break;
+                    default:
+                        lineLength = 4;
+                        sb.Append("dword:0x");
+                        break;
+                }
+
+                for (int j = 0; j < lineLength; j++, i++)
+                    sb.AppendFormat("{0:X2}", data[i]);
+
+                elements.Add(sb.ToString());
+            }
+
+            return string.Join("\n", elements);
+        }
+
+        public static IEnumerable<ulong> PackLargeWriteForGeckoCodes(Word address, byte[] data)
+        {
+            if (address.Type == WordType.RelativeAddr)
+                throw new InvalidOperationException("cannot pack a dynamically linked data blob as a Gecko code");
+
+            var codes = new List<ulong>();
+
+            long paddingSize = 0;
+            if ((data.Length % 8) != 0)
+                paddingSize = 8 - (data.Length % 8);
+
+            ulong header = 0x06000000UL << 32;
+            header |= (ulong)(address.Value & 0x1FFFFFF) << 32;
+            header |= (ulong)(data.Length + paddingSize) & 0xFFFFFFFF;
+            codes.Add(header);
+
+            for (int i = 0; i < data.Length; i += 8)
+            {
+                ulong bits = 0;
+                if (i < data.Length) bits |= (ulong)data[i] << 56;
+                if ((i + 1) < data.Length) bits |= (ulong)data[i + 1] << 48;
+                if ((i + 2) < data.Length) bits |= (ulong)data[i + 2] << 40;
+                if ((i + 3) < data.Length) bits |= (ulong)data[i + 3] << 32;
+                if ((i + 4) < data.Length) bits |= (ulong)data[i + 4] << 24;
+                if ((i + 5) < data.Length) bits |= (ulong)data[i + 5] << 16;
+                if ((i + 6) < data.Length) bits |= (ulong)data[i + 6] << 8;
+                if ((i + 7) < data.Length) bits |= (ulong)data[i + 7];
+                codes.Add(bits);
+            }
+
+            return codes;
+        }
     }
 }

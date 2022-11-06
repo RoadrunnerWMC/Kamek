@@ -102,25 +102,27 @@ namespace Kamek
         {
             foreach (var injection in injections)
             {
-                for (uint offs = 0; offs < injection.size; offs += 4) {
-                    uint value;
-                    if (offs < injection.section.sh_size)
-                        value = Util.ExtractUInt32(injection.section.data, offs);
-                    else
-                        value = 0x60000000;  // nop
+                var data = injection.section.data;
+                if (data.Length < injection.size)
+                {
+                    Array.Resize(ref data, (int)injection.size);
+                    for (uint offs = (uint)data.Length; offs < injection.size; offs += 4)
+                        Util.InjectUInt32(data, offs, 0x60000000);  // nop
+                }
 
-                    Word injectionAddr = injection.address + offs;
-                    if (_injectionCommands.ContainsKey(injectionAddr))
-                        throw new InvalidOperationException(string.Format("duplicate commands for address {0}", injectionAddr));
+                Commands.WriteBlobCommand blobCmd = new Commands.WriteBlobCommand(injection.address, data);
 
-                    Commands.Command cmd = new Commands.WriteCommand(
-                        injectionAddr,
-                        new Word(WordType.Value, value),
-                        Commands.WriteCommand.Type.Value32,
-                        null);
+                Commands.Command[] cmds;
+                if (blobCmd.IsExplodingBeneficial())
+                    cmds = blobCmd.Explode();
+                else
+                    cmds = new [] {blobCmd};
+
+                foreach (Commands.Command cmd in cmds)
+                {
                     cmd.CalculateAddress(this);
                     cmd.AssertAddressNonNull();
-                    _injectionCommands[injectionAddr] = cmd;
+                    _injectionCommands[injection.address] = cmd;
                 }
             }
         }
@@ -181,8 +183,8 @@ namespace Kamek
             {
                 using (var bw = new BinaryWriter(ms))
                 {
-                    bw.WriteBE((uint)0x4B616D65); // 'Kamek\0\0\2'
-                    bw.WriteBE((uint)0x6B000002);
+                    bw.WriteBE((uint)0x4B616D65); // 'Kamek\0\0\3'
+                    bw.WriteBE((uint)0x6B000003);
                     bw.WriteBE((uint)_bssSize);
                     bw.WriteBE((uint)_codeBlob.Length);
                     bw.WriteBE((uint)_ctorStart);
@@ -229,11 +231,7 @@ namespace Kamek
             {
                 // add the big patch
                 // (todo: valuefile support)
-                var sb = new StringBuilder(_codeBlob.Length * 2);
-                for (int i = 0; i < _codeBlob.Length; i++)
-                    sb.AppendFormat("{0:X2}", _codeBlob[i]);
-
-                elements.Add(string.Format("<memory offset='0x{0:X8}' value='{1}' />", _baseAddress.Value, sb.ToString()));
+                elements.Add(Util.PackLargeWriteForRiivolution(_baseAddress, _codeBlob));
             }
 
             // add individual patches
@@ -251,35 +249,7 @@ namespace Kamek
             var elements = new List<string>();
 
             // add the big patch
-            int i = 0;
-            while (i < _codeBlob.Length)
-            {
-                var sb = new StringBuilder(27);
-                sb.AppendFormat("0x{0:X8}:", _baseAddress.Value + i);
-
-                int lineLength;
-                switch (_codeBlob.Length - i)
-                {
-                    case 1:
-                        lineLength = 1;
-                        sb.Append("byte:0x000000");
-                        break;
-                    case 2:
-                    case 3:
-                        lineLength = 2;
-                        sb.Append("word:0x0000");
-                        break;
-                    default:
-                        lineLength = 4;
-                        sb.Append("dword:0x");
-                        break;
-                }
-
-                for (int j = 0; j < lineLength; j++, i++)
-                    sb.AppendFormat("{0:X2}", _codeBlob[i]);
-
-                elements.Add(sb.ToString());
-            }
+            elements.Add(Util.PackLargeWriteForDolphin(_baseAddress, _codeBlob));
 
             // add individual patches
             foreach (var pair in _commands)
@@ -298,28 +268,7 @@ namespace Kamek
             if (_codeBlob.Length > 0)
             {
                 // add the big patch
-                long paddingSize = 0;
-                if ((_codeBlob.Length % 8) != 0)
-                    paddingSize = 8 - (_codeBlob.Length % 8);
-
-                ulong header = 0x06000000UL << 32;
-                header |= (ulong)(_baseAddress.Value & 0x1FFFFFF) << 32;
-                header |= (ulong)(_codeBlob.Length + paddingSize) & 0xFFFFFFFF;
-                codes.Add(header);
-
-                for (int i = 0; i < _codeBlob.Length; i += 8)
-                {
-                    ulong bits = 0;
-                    if (i < _codeBlob.Length) bits |= (ulong)_codeBlob[i] << 56;
-                    if ((i + 1) < _codeBlob.Length) bits |= (ulong)_codeBlob[i + 1] << 48;
-                    if ((i + 2) < _codeBlob.Length) bits |= (ulong)_codeBlob[i + 2] << 40;
-                    if ((i + 3) < _codeBlob.Length) bits |= (ulong)_codeBlob[i + 3] << 32;
-                    if ((i + 4) < _codeBlob.Length) bits |= (ulong)_codeBlob[i + 4] << 24;
-                    if ((i + 5) < _codeBlob.Length) bits |= (ulong)_codeBlob[i + 5] << 16;
-                    if ((i + 6) < _codeBlob.Length) bits |= (ulong)_codeBlob[i + 6] << 8;
-                    if ((i + 7) < _codeBlob.Length) bits |= (ulong)_codeBlob[i + 7];
-                    codes.Add(bits);
-                }
+                codes.AddRange(Util.PackLargeWriteForGeckoCodes(_baseAddress, _codeBlob));
             }
 
             // add individual patches
