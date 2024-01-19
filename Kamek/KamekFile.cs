@@ -290,16 +290,10 @@ namespace Kamek
 
             var codes = new List<ulong>();
 
-            // add the big patch
-            for (int i = 0; i < _codeBlob.Length; i += 4)
+            if (_codeBlob.Length > 0)
             {
-                ulong bits = 0x04000000UL << 32;
-                bits |= (ulong)((_baseAddress.Value + i) & 0x1FFFFFF) << 32;
-                if (i < _codeBlob.Length) bits |= (ulong)_codeBlob[i] << 24;
-                if ((i + 1) < _codeBlob.Length) bits |= (ulong)_codeBlob[i + 1] << 16;
-                if ((i + 2) < _codeBlob.Length) bits |= (ulong)_codeBlob[i + 2] << 8;
-                if ((i + 3) < _codeBlob.Length) bits |= (ulong)_codeBlob[i + 3];
-                codes.Add(bits);
+                // add the big patch
+                codes.AddRange(Util.PackLargeWriteForActionReplayCodes(_baseAddress, _codeBlob));
             }
 
             // add individual patches
