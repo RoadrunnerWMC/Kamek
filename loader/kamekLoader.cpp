@@ -99,9 +99,11 @@ kCommandHandler(Write8) {
 }
 kCommandHandler(WriteBlob) {
 	u32 size = *(const u32 *)input;
-	funcs->memcpy((void *)address, (const void *)(input + 4), (size_t)size);
-	u32 endOfBuffer = (u32)input + 4 + size;
 	// skip 1, 2, or 3 bytes to align to 4
+	u32 startOfBuffer = (u32)input + 4 + (address % 4);
+	funcs->memcpy((void *)address, (const void *)(startOfBuffer), (size_t)size);
+	u32 endOfBuffer = startOfBuffer + size;
+	// skip 1, 2, or 3 bytes to align to 4 
 	return (const u8 *)((endOfBuffer + 3) & -4);
 }
 kCommandHandler(CondWritePointer) {

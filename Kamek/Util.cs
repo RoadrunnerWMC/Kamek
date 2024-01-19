@@ -195,5 +195,58 @@ namespace Kamek
 
             return codes;
         }
+
+        public static IEnumerable<ulong> PackLargeWriteForActionReplayCodes(Word address, byte[] data)
+        {
+            if (address.Type == WordType.RelativeAddr)
+                throw new InvalidOperationException("cannot pack a dynamically linked data blob as an Action Replay code");
+
+            var codes = new List<ulong>();
+
+            uint cursor = 0;
+
+            if ((address.Value + cursor) % 2 == 1)
+            {
+                ulong code = ((ulong)((address.Value + cursor) & 0x1FFFFFF) << 32) | data[cursor];
+                codes.Add(code);
+                cursor += 1;
+            }
+
+            if ((address.Value + cursor) % 4 == 2)
+            {
+                ulong code = (0x2000000UL << 32)
+                    | ((ulong)((address.Value + cursor) & 0x1FFFFFF) << 32)
+                    | Util.ExtractUInt16(data, cursor);
+                codes.Add(code);
+                cursor += 2;
+            }
+
+            while (cursor + 4 <= data.Length)
+            {
+                ulong code = (0x4000000UL << 32)
+                    | ((ulong)((address.Value + cursor) & 0x1FFFFFF) << 32)
+                    | Util.ExtractUInt32(data, cursor);
+                codes.Add(code);
+                cursor += 4;
+            }
+
+            if (cursor + 2 <= data.Length)
+            {
+                ulong code = (0x2000000UL << 32)
+                    | ((ulong)((address.Value + cursor) & 0x1FFFFFF) << 32)
+                    | Util.ExtractUInt16(data, cursor);
+                codes.Add(code);
+                cursor += 2;
+            }
+
+            if (cursor < data.Length)
+            {
+                ulong code = ((ulong)((address.Value + cursor) & 0x1FFFFFF) << 32) | data[cursor];
+                codes.Add(code);
+                cursor += 1;
+            }
+
+            return codes.ToArray();
+        }
     }
 }
