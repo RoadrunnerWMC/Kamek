@@ -49,8 +49,8 @@ namespace Kamek
 
             CollectSections();
             BuildSymbolTables();
-            ProcessHooks();
             ProcessRelocations();
+            ProcessHooks();
         }
 
         private Word _baseAddress;
@@ -453,7 +453,9 @@ namespace Kamek
 
         private bool KamekUseReloc(Elf.Reloc type, Word source, Word dest)
         {
-            if (source.Type == WordType.AbsoluteAddr || source < _kamekStart || source >= _kamekEnd)
+            if (source.Type == WordType.AbsoluteAddr && dest.Type == WordType.RelativeAddr)
+                return false;
+            if (source < _kamekStart || source >= _kamekEnd)
                 return false;
             if (type != Elf.Reloc.R_PPC_ADDR32)
                 throw new InvalidOperationException($"Unsupported relocation type {type} in the Kamek hook data section");

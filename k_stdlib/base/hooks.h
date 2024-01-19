@@ -83,23 +83,31 @@
 #define kmCallDefAsm(addr) \
 	kmCallDefInt(__COUNTER__, addr, asm void, )
 
-// kmInjectDefAsm
+// kmWriteDefAsm, kmWriteNops
 //   Inject assembly code directly into the target executable,
 //   overwriting whatever's there. endAddr is exclusive. If the function
 //   is shorter than the injection region, it's padded with nops.
-#define kmInjectDefAsm5(pragmaString) _Pragma(#pragmaString)
-#define kmInjectDefAsm4(secName) \
-	kmInjectDefAsm5(section code_type #secName)
-#define kmInjectDefAsm3(counter, addr, endAddr) \
+#define _kmWriteDefAsm5(pragmaString) _Pragma(#pragmaString)
+#define _kmWriteDefAsm4(secName) \
+	_kmWriteDefAsm5(section code_type #secName)
+#define _kmWriteDefAsm3(counter, addr, endAddr) \
 	kmHook3(kctInjectSection, counter, (addr), (endAddr)); \
 	_Pragma("push") \
-	kmInjectDefAsm4(.km_inject_##counter) \
+	_kmWriteDefAsm4(.km_inject_##counter) \
 	static void kmIdentifier(UserFunc, counter) (); \
 	_Pragma("pop") \
 	static asm void kmIdentifier(UserFunc, counter) ()
-#define kmInjectDefAsm2(counter, addr, endAddr) \
-	kmInjectDefAsm3(counter, addr, endAddr)
-#define kmInjectDefAsm(addr, endAddr) \
-	kmInjectDefAsm2(__COUNTER__, addr, endAddr)
+// #define _kmWriteDefAsm2(counter, addr, endAddr) \
+// 	_kmWriteDefAsm3(counter, addr, endAddr)
+// #define kmWriteDefAsm(addr, endAddr) \
+// 	_kmWriteDefAsm2(__COUNTER__, addr, endAddr)
+#define _get1stArg(_1, ...) _1
+#define _get2ndArg(_1, _2, ...) _2
+#define _kmWriteDefAsm2(counter, ...) \
+	_kmWriteDefAsm3(__COUNTER__, _get1stArg(__VA_ARGS__), _get2ndArg(__VA_ARGS__, addr))
+#define kmWriteDefAsm(...) \
+	_kmWriteDefAsm2(__COUNTER__, __VA_ARGS__)
+#define kmWriteNops(...) \
+	_kmWriteDefAsm2(__COUNTER__, __VA_ARGS__) {}
 
 #endif
