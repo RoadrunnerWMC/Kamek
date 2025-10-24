@@ -15,10 +15,18 @@ namespace Kamek.Commands
 
             // these deliberately match the ELF relocations
             Addr32 = 1,
+            Addr24 = 2,
+            Addr16 = 3,
             Addr16Lo = 4,
             Addr16Hi = 5,
             Addr16Ha = 6,
+            Addr14 = 7,
+            Addr14BrTaken = 8,
+            Addr14BrNTaken = 9,
             Rel24 = 10,
+            Rel14 = 11,
+            Rel14BrTaken = 12,
+            Rel14BrNTaken = 13,
 
             // these are new
             WritePointer = 1, // same as Addr32 on purpose
