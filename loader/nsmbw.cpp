@@ -140,23 +140,23 @@ const loaderFunctionsEx functions_w = {
 };
 
 const loaderFunctionsEx functions_c = {
-	{(OSReport_t) 0X80161A90,
-	(OSFatal_t) 0X801B1930,
-	(DVDConvertPathToEntrynum_t) 0X801CC9E0,
-	(DVDFastOpen_t) 0X801CCCF0,
-	(DVDReadPrio_t) 0X801CCE80,
-	(DVDClose_t) 0X801CCD60,
-	(sprintf_t) 0X802E4DF8,
+	{(OSReport_t) 0x80161A90,
+	(OSFatal_t) 0x801B1930,
+	(DVDConvertPathToEntrynum_t) 0x801CC9E0,
+	(DVDFastOpen_t) 0x801CCCF0,
+	(DVDReadPrio_t) 0x801CCE80,
+	(DVDClose_t) 0x801CCD60,
+	(sprintf_t) 0x802E4DF8,
 	allocAdapter,
 	freeAdapter},
-	(EGG_Heap_alloc_t) 0X802BB360,
-	(EGG_Heap_free_t) 0X802BB610,
-	(memcpy_t) 0X80004364,
-	(flush_cache_t) 0X80004330,
-	(void **) 0X8037D4C8,
-	(void **) 0X8042FCCC,
-	(u32*) 0X800CA2D8,
-	(u32*) 0X8032D2F8
+	(EGG_Heap_alloc_t) 0x802BB360,
+	(EGG_Heap_free_t) 0x802BB610,
+	(memcpy_t) 0x80004364,
+	(flush_cache_t) 0x80004330,
+	(void **) 0x8037D4C8,
+	(void **) 0x8042FCCC,
+	(u32*) 0x800CA2D8,
+	(u32*) 0x8032D2F8
 };
 
 void unknownVersion() {
