@@ -1,4 +1,5 @@
 #include <kamek.h>
+#include <kamek_sdk.h>
 
 /*
  * A tiny patch to make the Nvidia Shield port of NSMBW work on Dolphin.

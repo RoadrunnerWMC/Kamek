@@ -1,7 +1,7 @@
 #ifndef __KAMEK_EGG_H
 #define __KAMEK_EGG_H
 
-#include "kamek.h"
+#include "../kamek.h"
 #include "nw4r.h"
 
 namespace EGG {

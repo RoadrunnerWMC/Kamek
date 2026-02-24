@@ -1,4 +1,5 @@
 #include <kamek.h>
+#include <kamek_sdk.h>
 
 // NOTE: bss _must_ be init'ed to zero!
 // todo: modify the Riiv patcher to take this into account!

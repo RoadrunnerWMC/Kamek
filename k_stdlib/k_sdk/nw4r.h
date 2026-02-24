@@ -1,7 +1,7 @@
 #ifndef __KAMEK_NW4R_H
 #define __KAMEK_NW4R_H
 
-#include "kamek.h"
+#include "../kamek.h"
 
 namespace nw4r {
 	namespace ut {
