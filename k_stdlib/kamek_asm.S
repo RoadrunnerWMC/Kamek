@@ -46,6 +46,25 @@ kmHook4: .macro type, arg0, arg1, arg2, arg3
 	.previous
 	.endm
 
+kmHook_2ui_1f: .macro type, arg0, arg1, arg2
+	.section .kamek
+	_kHook\@: .long 3, type, arg0, arg1
+	.float arg2
+	.previous
+	.section .discard
+	li r0, (_kHook\@)@l  // reference to prevent CodeWarrior from deleting the symbol
+	.previous
+	.endm
+kmHook_2ui_2f: .macro type, arg0, arg1, arg2, arg3
+	.section .kamek
+	_kHook\@: .long 4, type, arg0, arg1
+	.float arg2, arg3
+	.previous
+	.section .discard
+	li r0, (_kHook\@)@l  // reference to prevent CodeWarrior from deleting the symbol
+	.previous
+	.endm
+
 // kmCondWrite
 //   Write value to address, conditionally
 kmCondWritePointer: .macro addr, original, value
@@ -59,6 +78,9 @@ kmCondWrite16: .macro addr, original, value
 	.endm
 kmCondWrite8: .macro addr, original, value
 	kmHook4 kctConditionalWrite, 4, addr, value, original
+	.endm
+kmCondWriteFloat: .macro addr, original, value
+	kmHook_2ui_2f kctConditionalWrite, 4, addr, value, original
 	.endm
 
 // kmWrite
@@ -74,6 +96,12 @@ kmWrite16: .macro addr, value
 	.endm
 kmWrite8: .macro addr, value
 	kmHook3 kctWrite, 4, addr, value
+	.endm
+kmWriteFloat: .macro addr, value
+	kmHook_2ui_1f kctWrite, 4, addr, value
+	.endm
+kmWriteNop: .macro addr
+	kmWrite32 addr, 0x60000000
 	.endm
 
 // kmBranch, kmCall
