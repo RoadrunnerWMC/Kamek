@@ -33,5 +33,5 @@ jobs:
       run: ./build_release.sh ${{ matrix.rid }}
     - uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.rid }}
+        name: Kamek-${{ matrix.rid }}
         path: ${{ github.workspace }}/release
