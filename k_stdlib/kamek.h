@@ -67,6 +67,7 @@ struct _kmHook_4ui_2f_t { unsigned int a; unsigned int b; unsigned int c; unsign
 #define kmWrite16(addr, value) kmHook3(kctWrite, 3, (addr), (value))
 #define kmWrite8(addr, value) kmHook3(kctWrite, 4, (addr), (value))
 #define kmWriteFloat(addr, value) kmHook_2ui_1f(kctWrite, 2, (addr), (value))
+#define kmWriteNop(addr) kmWrite32((addr), 0x60000000)
 
 // kmPatchExitPoint
 //   Force the end of a Kamek function to always jump to a specific address
