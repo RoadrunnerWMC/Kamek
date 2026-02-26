@@ -25,7 +25,7 @@ done
 
 echo Linking...
 
-../Kamek/bin/Debug/net10.0/Kamek $OBJECTS -static=0x80341E68 -externals=externals-nsmbw-eu-v1.txt -output-riiv=1-loader.xml -output-gecko=1-loader.txt -output-code=1-loader.bin
-../Kamek/bin/Debug/net10.0/Kamek $OBJECTS -dynamic -externals=externals-nsmbw-eu-v1.txt -versions=versions-nsmbw.txt -output-kamek=1-dynamic.\$KV\$.bin
+../Kamek $OBJECTS -static=0x80341E68 -externals=externals-nsmbw-eu-v1.txt -output-riiv=1-loader.xml -output-gecko=1-loader.txt -output-code=1-loader.bin
+../Kamek $OBJECTS -dynamic -externals=externals-nsmbw-eu-v1.txt -versions=versions-nsmbw.txt -output-kamek=1-dynamic.\$KV\$.bin
 
 
