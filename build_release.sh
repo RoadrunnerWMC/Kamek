@@ -10,7 +10,7 @@ ROOT="$(pwd)"
 RID="$1"
 rm -rf release
 mkdir release
-cd src
+cd Source
 dotnet restore
 dotnet build -p:Configuration=Release
 dotnet publish -c Release -r "$RID" --self-contained true -p:PublishSingleFile=true
