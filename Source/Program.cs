@@ -299,9 +299,9 @@ namespace Kamek
             Console.WriteLine("      write a Riivolution XML fragment or file (-static only)");
             Console.WriteLine("    -output-dolphin=file.$KV$.ini");
             Console.WriteLine("      write a Dolphin INI fragment or file (-static only)");
-            Console.WriteLine("    -output-gecko=file.$KV$.xml");
+            Console.WriteLine("    -output-gecko=file.$KV$.txt");
             Console.WriteLine("      write a list of Gecko codes (-static only)");
-            Console.WriteLine("    -output-ar=file.$KV$.xml");
+            Console.WriteLine("    -output-ar=file.$KV$.txt");
             Console.WriteLine("      write a list of Action Replay codes (-static only)");
             Console.WriteLine("    -input-dol=file.$KV$.dol -output-dol=file2.$KV$.dol");
             Console.WriteLine("      apply these patches and generate a modified DOL (-static only)");
