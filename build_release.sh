@@ -14,7 +14,7 @@ cd Kamek
 dotnet restore
 dotnet build -p:Configuration=Release
 dotnet publish -c Release -r "$RID" --self-contained true -p:PublishSingleFile=true
-cd "bin/Release/net10.0/$RID/publish"
+cd "bin/Release/$RID/publish"
 rm -f *.pdb
 cp Kamek* "$ROOT/release"
 cd "$ROOT"
