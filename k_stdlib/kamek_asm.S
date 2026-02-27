@@ -166,8 +166,9 @@ kamek_ref_address: .macro output_reg, addr
 //     kamek_ref lwz, r3, 0x8042A4A8, r3
 //   Store r7 as a byte at this address, using r10 as a temporary:
 //     kamek_ref stb, r7, 0x80B07DD0, r10
-//   Load or store the 32-bit float at this address into f1, using r10 as a temporary:
-//     kamek_ref f1, 0x80AD3400, r10
+//   Load or store the 32-bit float at this address from/into f1, using r10 as a temporary:
+//     kamek_ref lfs, f1, 0x80AD3400, r10
+//     kamek_ref stf, f1, 0x80AD3400, r10
 kamek_ref: .macro insn, output_reg, addr, temp_reg
 	.extern __kAutoMap_&&addr
 	lis temp_reg, __kAutoMap_&&addr@ha
