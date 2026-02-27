@@ -39,11 +39,13 @@ def compile_s(s_path: Path, o_path: Path) -> None:
 
 
 def kamek_static_link(o_files: list[Path], *, static: int, externals: Path, output_dir: Path) -> None:
+    externals_arg = [f'-externals={externals}'] if externals.is_file() else []
+
     subprocess.run([
         str(KAMEK_EXE),
         '-q',
         f'-static=0x{static:08x}',
-        f'-externals={externals}',
+        *externals_arg,
         f'-output-riiv={output_dir / "output-riiv.xml"}',
         f'-output-dolphin={output_dir / "output-dolphin.ini"}',
         f'-output-gecko={output_dir / "output-gecko.txt"}',
@@ -60,7 +62,7 @@ def kamek_static_link(o_files: list[Path], *, static: int, externals: Path, outp
         str(KAMEK_EXE),
         '-q',
         f'-static=0x{static:08x}',
-        f'-externals={externals}',
+        *externals_arg,
         f'-input-alf=sample_105.alf',
         f'-output-alf={output_dir / "output-alf_105.alf"}',
         *(str(o) for o in o_files),
@@ -68,11 +70,13 @@ def kamek_static_link(o_files: list[Path], *, static: int, externals: Path, outp
 
 
 def kamek_dynamic_link(o_files: list[Path], *, externals: Path, versions: Path, output_dir: Path) -> None:
+    externals_arg = [f'-externals={externals}'] if externals.is_file() else []
+
     subprocess.run([
         str(KAMEK_EXE),
         '-q',
         '-dynamic',
-        f'-externals={externals}',
+        *externals_arg,
         f'-versions={versions}',
         f'-output-kamek={output_dir / "output-kamek.$KV$.bin"}',
         f'-output-map={output_dir / "output-map-dynamic.map"}',
