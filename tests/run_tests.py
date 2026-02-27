@@ -50,6 +50,19 @@ def kamek_static_link(o_files: list[Path], *, static: int, externals: Path, outp
         f'-output-ar={output_dir / "output-ar.txt"}',
         f'-output-code={output_dir / "output-code.bin"}',
         f'-output-map={output_dir / "output-map-static.map"}',
+        f'-input-dol=sample.dol',
+        f'-output-dol={output_dir / "output-dol.dol"}',
+        f'-input-alf=sample_104.alf',
+        f'-output-alf={output_dir / "output-alf_104.alf"}',
+        *(str(o) for o in o_files),
+    ])
+    subprocess.run([
+        str(KAMEK_EXE),
+        '-q',
+        f'-static=0x{static:08x}',
+        f'-externals={externals}',
+        f'-input-alf=sample_105.alf',
+        f'-output-alf={output_dir / "output-alf_105.alf"}',
         *(str(o) for o in o_files),
     ])
 
