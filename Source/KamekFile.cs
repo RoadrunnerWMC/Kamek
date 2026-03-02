@@ -56,7 +56,11 @@ namespace Kamek
         }
         #endregion
 
-        private Dictionary<Word, Commands.Command> _commands;
+        private Dictionary<Word, Commands.Command> _injectionCommands;
+        private Dictionary<Word, Commands.Command> _otherCommands;
+        // Injection commands have to come first, since relocations are applied on top of them
+        public IEnumerable<KeyValuePair<Word, Commands.Command>> _commands { get { return _injectionCommands.Concat(_otherCommands); } }
+
         private List<Hooks.Hook> _hooks;
         private Dictionary<Word, uint> _symbolSizes;
         private AddressMapper _mapper;
@@ -78,11 +82,14 @@ namespace Kamek
             _ctorEnd = linker.CtorEnd - linker.OutputStart;
 
             _hooks = new List<Hooks.Hook>();
-            _commands = new Dictionary<Word, Commands.Command>();
+            _injectionCommands = new Dictionary<Word, Commands.Command>();
+            _otherCommands = new Dictionary<Word, Commands.Command>();
 
             _symbolSizes = new Dictionary<Word, uint>();
             foreach (var pair in linker.SymbolSizes)
                 _symbolSizes.Add(pair.Key, pair.Value);
+
+            AddInjectionCommands(linker.SectionInjections);
 
             AddRelocsAsCommands(linker.Fixups);
 
@@ -92,16 +99,28 @@ namespace Kamek
         }
 
 
+        private void AddInjectionCommands(IEnumerable<Linker.SectionInjection> injections)
+        {
+            foreach (var injection in injections)
+            {
+                Commands.WriteRangeCommand cmd = new Commands.WriteRangeCommand(injection.address, injection.section.data);
+                cmd.CalculateAddress(this);
+                cmd.AssertAddressNonNull();
+                _injectionCommands[cmd.Address.Value] = cmd;
+            }
+        }
+
+
         private void AddRelocsAsCommands(IReadOnlyList<Linker.Fixup> relocs)
         {
             foreach (var rel in relocs)
             {
-                if (_commands.ContainsKey(rel.source))
+                if (_otherCommands.ContainsKey(rel.source))
                     throw new InvalidOperationException(string.Format("duplicate commands for address {0}", rel.source));
                 Commands.Command cmd = new Commands.RelocCommand(rel.source, rel.dest, rel.type);
                 cmd.CalculateAddress(this);
                 cmd.AssertAddressNonNull();
-                _commands[rel.source] = cmd;
+                _otherCommands[rel.source] = cmd;
             }
         }
 
@@ -113,9 +132,9 @@ namespace Kamek
             {
                 cmd.CalculateAddress(this);
                 cmd.AssertAddressNonNull();
-                if (_commands.ContainsKey(cmd.Address.Value))
+                if (_otherCommands.ContainsKey(cmd.Address.Value))
                     throw new InvalidOperationException(string.Format("duplicate commands for address {0}", cmd.Address.Value));
-                _commands[cmd.Address.Value] = cmd;
+                _otherCommands[cmd.Address.Value] = cmd;
             }
             _hooks.Add(hook);
         }
@@ -124,14 +143,18 @@ namespace Kamek
         private void ApplyStaticCommands()
         {
             // leave _commands containing just the ones we couldn't apply here
-            var original = _commands;
-            _commands = new Dictionary<Word, Commands.Command>();
-
-            foreach (var cmd in original.Values)
+            foreach (var commandsDict in new[] {_injectionCommands, _otherCommands})
             {
-                if (!cmd.Apply(this)) {
-                    cmd.AssertAddressNonNull();
-                    _commands[cmd.Address.Value] = cmd;
+                var original = new Dictionary<Word, Commands.Command>(commandsDict);
+                commandsDict.Clear();
+
+                foreach (var cmd in original.Values)
+                {
+                    if (!cmd.Apply(this))
+                    {
+                        cmd.AssertAddressNonNull();
+                        commandsDict[cmd.Address.Value] = cmd;
+                    }
                 }
             }
         }
@@ -144,8 +167,8 @@ namespace Kamek
             {
                 using (var bw = new BinaryWriter(ms))
                 {
-                    bw.WriteBE((uint)0x4B616D65); // 'Kamek\0\0\2'
-                    bw.WriteBE((uint)0x6B000002);
+                    bw.WriteBE((uint)0x4B616D65); // 'Kamek\0\0\3'
+                    bw.WriteBE((uint)0x6B000003);
                     bw.WriteBE((uint)_bssSize);
                     bw.WriteBE((uint)_codeBlob.Length);
                     bw.WriteBE((uint)_ctorStart);
