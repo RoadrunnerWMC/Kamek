@@ -236,15 +236,48 @@ namespace Kamek
 
             var codes = new List<ulong>();
 
-            for (int i = 0; i < data.Length; i += 4)
+            uint cursor = 0;
+
+            if ((address.Value + cursor) % 2 == 1)
             {
-                ulong bits = 0x04000000UL << 32;
-                bits |= (ulong)((address.Value + i) & 0x1FFFFFF) << 32;
-                if (i < data.Length) bits |= (ulong)data[i] << 24;
-                if ((i + 1) < data.Length) bits |= (ulong)data[i + 1] << 16;
-                if ((i + 2) < data.Length) bits |= (ulong)data[i + 2] << 8;
-                if ((i + 3) < data.Length) bits |= (ulong)data[i + 3];
-                codes.Add(bits);
+                codes.Add(((ulong)((address.Value + cursor) & 0x1FFFFFF) << 32) | data[cursor]);
+                cursor += 1;
+            }
+
+            if ((address.Value + cursor) % 4 == 2)
+            {
+                codes.Add(
+                    (0x2000000UL << 32)
+                    | ((ulong)((address.Value + cursor) & 0x1FFFFFF) << 32)
+                    | Util.ExtractUInt16(data, cursor)
+                );
+                cursor += 2;
+            }
+
+            while (cursor + 4 <= data.Length)
+            {
+                codes.Add(
+                    (0x4000000UL << 32)
+                    | ((ulong)((address.Value + cursor) & 0x1FFFFFF) << 32)
+                    | Util.ExtractUInt32(data, cursor)
+                );
+                cursor += 4;
+            }
+
+            if (cursor + 2 <= data.Length)
+            {
+                codes.Add(
+                    (0x2000000UL << 32)
+                    | ((ulong)((address.Value + cursor) & 0x1FFFFFF) << 32)
+                    | Util.ExtractUInt16(data, cursor)
+                );
+                cursor += 2;
+            }
+
+            if (cursor < data.Length)
+            {
+                codes.Add(((ulong)((address.Value + cursor) & 0x1FFFFFF) << 32) | data[cursor]);
+                cursor += 1;
             }
 
             return codes;
