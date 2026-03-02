@@ -222,7 +222,7 @@ namespace Kamek
 
             // add individual patches
             foreach (var pair in _commands)
-                elements.Add(pair.Value.PackForDolphin());
+                elements.AddRange(pair.Value.PackForDolphin());
 
             return InjectLinesIntoTemplate(template, elements.ToArray(), "Dolphin INI");
         }

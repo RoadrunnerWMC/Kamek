@@ -58,7 +58,7 @@ namespace Kamek.Commands
             throw new NotImplementedException();
         }
 
-        public override string PackForDolphin()
+        public override IEnumerable<string> PackForDolphin()
         {
             throw new NotImplementedException();
         }
