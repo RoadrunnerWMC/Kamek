@@ -196,11 +196,7 @@ namespace Kamek
 
                 else
                 {
-                    var sb = new StringBuilder(_codeBlob.Length * 2);
-                    for (int i = 0; i < _codeBlob.Length; i++)
-                        sb.AppendFormat("{0:X2}", _codeBlob[i]);
-
-                    elements.Add(string.Format("<memory offset=\"0x{0:X8}\" value=\"{1}\" />", _baseAddress.Value, sb.ToString()));
+                    elements.Add(Util.PackLargeWriteForRiivolution(_baseAddress, _codeBlob));
                 }
             }
 
@@ -218,35 +214,10 @@ namespace Kamek
 
             var elements = new List<string>();
 
-            // add the big patch
-            int i = 0;
-            while (i < _codeBlob.Length)
+            if (_codeBlob.Length > 0)
             {
-                var sb = new StringBuilder(27);
-                sb.AppendFormat("0x{0:X8}:", _baseAddress.Value + i);
-
-                int lineLength;
-                switch (_codeBlob.Length - i)
-                {
-                    case 1:
-                        lineLength = 1;
-                        sb.Append("byte:0x000000");
-                        break;
-                    case 2:
-                    case 3:
-                        lineLength = 2;
-                        sb.Append("word:0x0000");
-                        break;
-                    default:
-                        lineLength = 4;
-                        sb.Append("dword:0x");
-                        break;
-                }
-
-                for (int j = 0; j < lineLength; j++, i++)
-                    sb.AppendFormat("{0:X2}", _codeBlob[i]);
-
-                elements.Add(sb.ToString());
+                // add the big patch
+                elements.AddRange(Util.PackLargeWriteForDolphin(_baseAddress, _codeBlob));
             }
 
             // add individual patches
@@ -266,28 +237,7 @@ namespace Kamek
             if (_codeBlob.Length > 0)
             {
                 // add the big patch
-                long paddingSize = 0;
-                if ((_codeBlob.Length % 8) != 0)
-                    paddingSize = 8 - (_codeBlob.Length % 8);
-
-                ulong header = 0x06000000UL << 32;
-                header |= (ulong)(_baseAddress.Value & 0x1FFFFFF) << 32;
-                header |= (ulong)(_codeBlob.Length + paddingSize) & 0xFFFFFFFF;
-                codes.Add(header);
-
-                for (int i = 0; i < _codeBlob.Length; i += 8)
-                {
-                    ulong bits = 0;
-                    if (i < _codeBlob.Length) bits |= (ulong)_codeBlob[i] << 56;
-                    if ((i + 1) < _codeBlob.Length) bits |= (ulong)_codeBlob[i + 1] << 48;
-                    if ((i + 2) < _codeBlob.Length) bits |= (ulong)_codeBlob[i + 2] << 40;
-                    if ((i + 3) < _codeBlob.Length) bits |= (ulong)_codeBlob[i + 3] << 32;
-                    if ((i + 4) < _codeBlob.Length) bits |= (ulong)_codeBlob[i + 4] << 24;
-                    if ((i + 5) < _codeBlob.Length) bits |= (ulong)_codeBlob[i + 5] << 16;
-                    if ((i + 6) < _codeBlob.Length) bits |= (ulong)_codeBlob[i + 6] << 8;
-                    if ((i + 7) < _codeBlob.Length) bits |= (ulong)_codeBlob[i + 7];
-                    codes.Add(bits);
-                }
+                codes.AddRange(Util.PackLargeWriteForGeckoCodes(_baseAddress, _codeBlob));
             }
 
             // add individual patches
@@ -309,16 +259,10 @@ namespace Kamek
 
             var codes = new List<ulong>();
 
-            // add the big patch
-            for (int i = 0; i < _codeBlob.Length; i += 4)
+            if (_codeBlob.Length > 0)
             {
-                ulong bits = 0x04000000UL << 32;
-                bits |= (ulong)((_baseAddress.Value + i) & 0x1FFFFFF) << 32;
-                if (i < _codeBlob.Length) bits |= (ulong)_codeBlob[i] << 24;
-                if ((i + 1) < _codeBlob.Length) bits |= (ulong)_codeBlob[i + 1] << 16;
-                if ((i + 2) < _codeBlob.Length) bits |= (ulong)_codeBlob[i + 2] << 8;
-                if ((i + 3) < _codeBlob.Length) bits |= (ulong)_codeBlob[i + 3];
-                codes.Add(bits);
+                // add the big patch
+                codes.AddRange(Util.PackLargeWriteForActionReplayCodes(_baseAddress, _codeBlob));
             }
 
             // add individual patches
