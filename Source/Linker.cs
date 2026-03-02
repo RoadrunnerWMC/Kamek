@@ -456,7 +456,7 @@ namespace Kamek
             if (source < _kamekStart || source >= _kamekEnd)
                 return false;
             if (type != Elf.Reloc.R_PPC_ADDR32)
-                throw new InvalidOperationException("Unsupported relocation type in the Kamek hook data section");
+                throw new InvalidOperationException($"Unsupported relocation type {type} in the Kamek hook data section");
 
             _kamekRelocations[source] = dest;
             return true;
