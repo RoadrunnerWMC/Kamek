@@ -12,7 +12,8 @@ namespace Kamek.Hooks
         kctConditionalWrite = 2,
         kctInjectBranch = 3,
         kctInjectCall = 4,
-        kctPatchExit = 5
+        kctPatchExit = 5,
+        kctInjectSection = 6
     }
 
     abstract class Hook
@@ -31,6 +32,8 @@ namespace Kamek.Hooks
                     return new BranchHook(true, data.args, mapper);
                 case (uint)HookType.kctPatchExit:
                     return new PatchExitHook(data.args, mapper);
+                case (uint)HookType.kctInjectSection:
+                    throw new InvalidOperationException("Linker class is supposed to handle and remove these itself");
                 default:
                     throw new NotImplementedException("unknown command type");
             }

@@ -49,8 +49,9 @@ namespace Kamek
 
             CollectSections();
             BuildSymbolTables();
+            ProcessHooks(1);
             ProcessRelocations();
-            ProcessHooks();
+            ProcessHooks(2);
         }
 
         private Word _baseAddress;
@@ -453,7 +454,7 @@ namespace Kamek
 
         private bool KamekUseReloc(Elf.Reloc type, Word source, Word dest)
         {
-            if (source < _kamekStart || source >= _kamekEnd)
+            if (source.Type != _kamekStart.Type || source < _kamekStart || source >= _kamekEnd)
                 return false;
             if (type != Elf.Reloc.R_PPC_ADDR32)
                 throw new InvalidOperationException($"Unsupported relocation type {type} in the Kamek hook data section");
@@ -472,7 +473,7 @@ namespace Kamek
         public IList<HookData> Hooks { get { return _hooks; } }
 
 
-        private void ProcessHooks()
+        private void ProcessHooks(int passNum)
         {
             foreach (var elf in _modules)
             {
@@ -495,8 +496,102 @@ namespace Kamek
                                 args[i] = new Word(WordType.Value, ReadUInt32(argAddr));
                         }
 
-                        _hooks.Add(new HookData { type = type, args = args });
+                        HookData hook = new HookData { type = type, args = args };
+
+                        if (passNum == 1)
+                        {
+                            // First pass: we process all kctInjectSection hooks.
+                            // This needs to be done before relocations are processed,
+                            // so that relocations applying to injected sections can be
+                            // processed correctly.
+                            if (type == (uint)Kamek.Hooks.HookType.kctInjectSection)
+                                ProcessSectionInjection(elf, hook);
+                        }
+                        else
+                        {
+                            // Second pass: now that all relocations have been processed,
+                            // we collect all non-kctInjectSection hooks, and also
+                            // detect any illegally relocated injected-section addresses
+                            if (type == (uint)Kamek.Hooks.HookType.kctInjectSection)
+                            {
+                                if (hook.args[1].Type == WordType.RelativeAddr
+                                        || hook.args[2].Type == WordType.RelativeAddr)
+                                    throw new InvalidDataException("Cannot inject into user code");
+                            }
+                            else
+                            {
+                                _hooks.Add(hook);
+                            }
+                        }
                     }
+                }
+            }
+        }
+        #endregion
+
+        #region Section Injections
+        public struct SectionInjection
+        {
+            public Word address;
+            public Elf.ElfSection section;
+        }
+
+        private List<SectionInjection> _sectionInjections = new List<SectionInjection>();
+        public IReadOnlyList<SectionInjection> SectionInjections { get { return _sectionInjections; } }
+
+        private void ProcessSectionInjection(Elf elf, HookData hook)
+        {
+            uint secId = hook.args[0].Value;
+            Word start = hook.args[1];
+            Word end = hook.args[2];
+
+            Word startPreMap = start;
+            uint sizePreMap = end.Value - start.Value;
+
+            if (start.Type == WordType.Value)
+                start = new Word(WordType.AbsoluteAddr, Mapper.Remap(start.Value));
+            if (end.Type == WordType.Value)
+                end = new Word(WordType.AbsoluteAddr, Mapper.Remap(end.Value));
+
+            uint sizePostMap = end.Value - start.Value;
+            if (sizePreMap != sizePostMap)
+                throw new InvalidDataException($"Injected code range at 0x{startPreMap.Value:x} changes size when remapped (0x{sizePreMap:x} -> 0x{sizePostMap:x})");
+
+            Elf.ElfSection sec = (from s in elf.Sections
+                                  where s.name == $".km_inject_{secId}"
+                                  select s).Single();
+
+            EnforceSectionInjectionSize(sec, start, end.Value - start.Value + 4);
+
+            _sectionInjections.Add(new SectionInjection {address=start, section=sec});
+            _sectionBases[sec] = start;
+        }
+
+
+        private void EnforceSectionInjectionSize(Elf.ElfSection sec, Word start, uint requestedSize)
+        {
+            if (sec.sh_size < requestedSize)
+            {
+                // Section data is too short: pad it with nops
+                Array.Resize(ref sec.data, (int)requestedSize);
+                for (uint offs = sec.sh_size; offs < requestedSize; offs += 4)
+                    Util.InjectUInt32(sec.data, offs, 0x60000000);
+                sec.sh_size = requestedSize;
+            }
+            else if (sec.sh_size > requestedSize)
+            {
+                // Section data is too long
+                if (sec.sh_size == requestedSize + 4 && Util.ExtractUInt32(sec.data, requestedSize) == 0x4e800020)
+                {
+                    // Section data is too long, but by exactly one "blr" instruction. Instead of
+                    // erroring, make an exception and just trim the blr instead. This way, users
+                    // don't need to put a "nofralloc" in every single kmWriteDefAsm call.
+                    Array.Resize(ref sec.data, (int)requestedSize);
+                    sec.sh_size = requestedSize;
+                }
+                else
+                {
+                    throw new InvalidDataException($"Injected code at 0x{start.Value:x} doesn't fit (0x{sec.sh_size:x} > 0x{requestedSize:x})");
                 }
             }
         }

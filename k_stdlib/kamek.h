@@ -20,6 +20,7 @@
 #define kctInjectBranch 3
 #define kctInjectCall 4
 #define kctPatchExit 5
+#define kctInjectSection 6
 
 
 #define kmIdentifier(key, counter) \
@@ -67,7 +68,6 @@ struct _kmHook_4ui_2f_t { unsigned int a; unsigned int b; unsigned int c; unsign
 #define kmWrite16(addr, value) kmHook3(kctWrite, 3, (addr), (value))
 #define kmWrite8(addr, value) kmHook3(kctWrite, 4, (addr), (value))
 #define kmWriteFloat(addr, value) kmHook_2ui_1f(kctWrite, 2, (addr), (value))
-#define kmWriteNop(addr) kmWrite32((addr), 0x60000000)
 
 // kmPatchExitPoint
 //   Force the end of a Kamek function to always jump to a specific address
@@ -106,5 +106,36 @@ struct _kmHook_4ui_2f_t { unsigned int a; unsigned int b; unsigned int c; unsign
 	kmCallDefInt(__COUNTER__, addr, returnType, __VA_ARGS__)
 #define kmCallDefAsm(addr) \
 	kmCallDefInt(__COUNTER__, addr, asm void, )
+
+// kmWriteDefAsm(startAddr[, endAddr])
+//   Inject assembly code directly into the target executable, overwriting
+//   whatever's there. startAddr and endAddr are the addresses of the first and
+//   last instructions to replace. If endAddr is omitted, it defaults to
+//   startAddr. If your new code is shorter than the address range, it'll be
+//   automatically padded with nops. If it's longer, you'll get a link-time
+//   error, unless it's longer by exactly one "blr" instruction, in which case
+//   it will be silently stripped.
+#define _kmWriteDefAsm5(pragmaString) _Pragma(#pragmaString)
+#define _kmWriteDefAsm4(secName) \
+	_kmWriteDefAsm5(section code_type #secName)
+#define _kmWriteDefAsm3(counter, addr, endAddr) \
+	kmHook3(kctInjectSection, counter, (addr), (endAddr)); \
+	_Pragma("push") \
+	_kmWriteDefAsm4(.km_inject_##counter) \
+	static void kmIdentifier(UserFunc, counter) (); \
+	_Pragma("pop") \
+	static asm void kmIdentifier(UserFunc, counter) ()
+#define _get1stArg(_1, ...) _1
+#define _get2ndArg(_1, _2, ...) _2
+#define _kmWriteDefAsm2(counter, ...) \
+	_kmWriteDefAsm3(counter, _get1stArg(__VA_ARGS__, 0), _get2ndArg(__VA_ARGS__, _get1stArg(__VA_ARGS__, 0), 0))
+#define kmWriteDefAsm(...) \
+	_kmWriteDefAsm2(__COUNTER__, __VA_ARGS__)
+
+// kmWriteNop, kmWriteNops
+//   Write one or more nop instructions to an address or address range
+#define kmWriteNop(addr) kmWrite32((addr), 0x60000000)
+#define kmWriteNops(startAddr, endAddr) \
+	kmWriteDefAsm((startAddr), (endAddr)) { nofralloc; nop }
 
 #endif
