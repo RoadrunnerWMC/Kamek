@@ -77,7 +77,7 @@ namespace Kamek.Commands
                     break;
 
                 default:
-                    throw new NotImplementedException("unrecognised relocation type");
+                    throw new NotImplementedException($"unrecognised relocation type {Id}");
             }
         }
 
@@ -136,7 +136,7 @@ namespace Kamek.Commands
                     break;
 
                 default:
-                    throw new NotImplementedException("unrecognised relocation type");
+                    throw new NotImplementedException($"unrecognised relocation type {Id}");
             }
 
             return false;
