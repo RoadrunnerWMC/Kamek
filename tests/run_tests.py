@@ -97,6 +97,8 @@ def main() -> None:
     for test_dir in Path().iterdir():
         if not test_dir.is_dir():
             continue
+        if test_dir.name.startswith('_'):
+            continue
 
         bin_dir = test_dir / '_bin'
         out_dir = test_dir / '_out'
