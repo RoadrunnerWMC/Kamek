@@ -94,11 +94,13 @@ def kamek_dynamic_link(o_files: list[Path], *, externals: Path, versions: Path, 
 
 
 def main() -> None:
-    for test_dir in Path().iterdir():
+    for test_dir in sorted(Path().iterdir()):
         if not test_dir.is_dir():
             continue
         if test_dir.name.startswith('_'):
             continue
+
+        print(f'---- {test_dir.name} ----')
 
         bin_dir = test_dir / '_bin'
         out_dir = test_dir / '_out'
