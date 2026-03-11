@@ -47,6 +47,8 @@ namespace Kamek
 
         public bool Contains(Word addr)
         {
+            if (addr.Type != _baseAddress.Type)
+                return false;
             return (addr >= _baseAddress && addr < (_baseAddress + _codeBlob.Length));
         }
 
