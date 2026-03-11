@@ -75,12 +75,9 @@ namespace Kamek
 
 
         #region Collecting Sections
-        private List<byte[]> _binaryBlobs = new List<byte[]>();
         private Dictionary<Elf.ElfSection, Word> _sectionBases = new Dictionary<Elf.ElfSection, Word>();
 
-        private Word _location;
-
-        private void ImportSections(string prefix)
+        private void ImportSections(ref List<byte[]> blobs, ref Word location, string prefix)
         {
             foreach (var elf in _modules)
             {
@@ -89,19 +86,19 @@ namespace Kamek
                                    select s))
                 {
                     if (s.data != null)
-                        _binaryBlobs.Add(s.data);
+                        blobs.Add(s.data);
                     else
-                        _binaryBlobs.Add(new byte[s.sh_size]);
+                        blobs.Add(new byte[s.sh_size]);
 
-                    _sectionBases[s] = _location;
-                    _location += s.sh_size;
+                    _sectionBases[s] = location;
+                    location += s.sh_size;
 
                     // Align to 4 bytes
-                    if ((_location.Value % 4) != 0)
+                    if ((location.Value % 4) != 0)
                     {
-                        long alignment = 4 - (_location.Value % 4);
-                        _binaryBlobs.Add(new byte[alignment]);
-                        _location += alignment;
+                        long alignment = 4 - (location.Value % 4);
+                        blobs.Add(new byte[alignment]);
+                        location += alignment;
                     }
                 }
             }
@@ -109,50 +106,52 @@ namespace Kamek
 
         private void CollectSections()
         {
-            _location = _baseAddress;
-            _outputStart = _location;
+            List<byte[]> blobs = new List<byte[]>();
+            Word location = _baseAddress;
 
-            _initStart = _location;
-            ImportSections(".init");
-            _initEnd = _location;
+            _outputStart = location;
 
-            ImportSections(".fini");
+            _initStart = location;
+            ImportSections(ref blobs, ref location, ".init");
+            _initEnd = location;
 
-            _textStart = _location;
-            ImportSections(".text");
-            _textEnd = _location;
+            ImportSections(ref blobs, ref location, ".fini");
 
-            _ctorStart = _location;
-            ImportSections(".ctors");
-            _ctorEnd = _location;
+            _textStart = location;
+            ImportSections(ref blobs, ref location, ".text");
+            _textEnd = location;
 
-            _dtorStart = _location;
-            ImportSections(".dtors");
-            _dtorEnd = _location;
+            _ctorStart = location;
+            ImportSections(ref blobs, ref location, ".ctors");
+            _ctorEnd = location;
 
-            _rodataStart = _location;
-            ImportSections(".rodata");
-            _rodataEnd = _location;
+            _dtorStart = location;
+            ImportSections(ref blobs, ref location, ".dtors");
+            _dtorEnd = location;
 
-            _dataStart = _location;
-            ImportSections(".data");
-            _dataEnd = _location;
+            _rodataStart = location;
+            ImportSections(ref blobs, ref location, ".rodata");
+            _rodataEnd = location;
 
-            _outputEnd = _location;
+            _dataStart = location;
+            ImportSections(ref blobs, ref location, ".data");
+            _dataEnd = location;
+
+            _outputEnd = location;
 
             // TODO: maybe should align to 0x20 here?
-            _bssStart = _location;
-            ImportSections(".bss");
-            _bssEnd = _location;
+            _bssStart = location;
+            ImportSections(ref blobs, ref location, ".bss");
+            _bssEnd = location;
 
-            _kamekStart = _location;
-            ImportSections(".kamek");
-            _kamekEnd = _location;
+            _kamekStart = location;
+            ImportSections(ref blobs, ref location, ".kamek");
+            _kamekEnd = location;
 
             // Create one big blob from this
-            _memory = new byte[_location - _baseAddress];
+            _memory = new byte[location - _baseAddress];
             int position = 0;
-            foreach (var blob in _binaryBlobs)
+            foreach (var blob in blobs)
             {
                 Array.Copy(blob, 0, _memory, position, blob.Length);
                 position += blob.Length;
