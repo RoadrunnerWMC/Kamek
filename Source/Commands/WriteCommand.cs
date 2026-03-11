@@ -73,13 +73,15 @@ namespace Kamek.Commands
             }
         }
 
-        public override string PackForRiivolution()
+        public override IEnumerable<string> PackForRiivolution()
         {
             Address.Value.AssertAbsolute();
             if (ValueType == Type.Pointer)
                 Value.AssertAbsolute();
             else
                 Value.AssertValue();
+
+            string ret = null;
 
             if (Original.HasValue)
             {
@@ -87,27 +89,30 @@ namespace Kamek.Commands
 
                 switch (ValueType)
                 {
-                    case Type.Value8: return string.Format("<memory offset=\"0x{0:X8}\" value=\"{1:X2}\" original=\"{2:X2}\" />", Address.Value.Value, Value.Value, Original.Value.Value);
-                    case Type.Value16: return string.Format("<memory offset=\"0x{0:X8}\" value=\"{1:X4}\" original=\"{2:X4}\" />", Address.Value.Value, Value.Value, Original.Value.Value);
+                    case Type.Value8: ret = string.Format("<memory offset=\"0x{0:X8}\" value=\"{1:X2}\" original=\"{2:X2}\" />", Address.Value.Value, Value.Value, Original.Value.Value); break;
+                    case Type.Value16: ret = string.Format("<memory offset=\"0x{0:X8}\" value=\"{1:X4}\" original=\"{2:X4}\" />", Address.Value.Value, Value.Value, Original.Value.Value); break;
                     case Type.Value32:
-                    case Type.Pointer: return string.Format("<memory offset=\"0x{0:X8}\" value=\"{1:X8}\" original=\"{2:X8}\" />", Address.Value.Value, Value.Value, Original.Value.Value);
+                    case Type.Pointer: ret = string.Format("<memory offset=\"0x{0:X8}\" value=\"{1:X8}\" original=\"{2:X8}\" />", Address.Value.Value, Value.Value, Original.Value.Value); break;
                 }
             }
             else
             {
                 switch (ValueType)
                 {
-                    case Type.Value8: return string.Format("<memory offset=\"0x{0:X8}\" value=\"{1:X2}\" />", Address.Value.Value, Value.Value);
-                    case Type.Value16: return string.Format("<memory offset=\"0x{0:X8}\" value=\"{1:X4}\" />", Address.Value.Value, Value.Value);
+                    case Type.Value8: ret = string.Format("<memory offset=\"0x{0:X8}\" value=\"{1:X2}\" />", Address.Value.Value, Value.Value); break;
+                    case Type.Value16: ret = string.Format("<memory offset=\"0x{0:X8}\" value=\"{1:X4}\" />", Address.Value.Value, Value.Value); break;
                     case Type.Value32:
-                    case Type.Pointer: return string.Format("<memory offset=\"0x{0:X8}\" value=\"{1:X8}\" />", Address.Value.Value, Value.Value);
+                    case Type.Pointer: ret = string.Format("<memory offset=\"0x{0:X8}\" value=\"{1:X8}\" />", Address.Value.Value, Value.Value); break;
                 }
             }
 
-            return null;
+            if (ret == null)
+                return new string[] { };
+            else
+                return new string[] { ret };
         }
 
-        public override string PackForDolphin()
+        public override IEnumerable<string> PackForDolphin()
         {
             Address.Value.AssertAbsolute();
             if (ValueType == Type.Pointer)
@@ -115,15 +120,20 @@ namespace Kamek.Commands
             else
                 Value.AssertValue();
 
+            string ret = null;
+
             switch (ValueType)
             {
-                case Type.Value8: return string.Format("0x{0:X8}:byte:0x000000{1:X2}", Address.Value.Value, Value.Value);
-                case Type.Value16: return string.Format("0x{0:X8}:word:0x0000{1:X4}", Address.Value.Value, Value.Value);
+                case Type.Value8: ret = string.Format("0x{0:X8}:byte:0x000000{1:X2}", Address.Value.Value, Value.Value); break;
+                case Type.Value16: ret = string.Format("0x{0:X8}:word:0x0000{1:X4}", Address.Value.Value, Value.Value); break;
                 case Type.Value32:
-                case Type.Pointer: return string.Format("0x{0:X8}:dword:0x{1:X8}", Address.Value.Value, Value.Value);
+                case Type.Pointer: ret = string.Format("0x{0:X8}:dword:0x{1:X8}", Address.Value.Value, Value.Value); break;
             }
 
-            return null;
+            if (ret == null)
+                return new string[] { };
+            else
+                return new string[] { ret };
         }
 
         public override IEnumerable<ulong> PackGeckoCodes()

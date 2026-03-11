@@ -23,20 +23,20 @@ namespace Kamek.Commands
             bw.WriteBE(Target.Value);
         }
 
-        public override string PackForRiivolution()
+        public override IEnumerable<string> PackForRiivolution()
         {
             Address.Value.AssertAbsolute();
             Target.AssertAbsolute();
 
-            return string.Format("<memory offset=\"0x{0:X8}\" value=\"{1:X8}\" />", Address.Value.Value, GenerateInstruction());
+            return new string[] { string.Format("<memory offset=\"0x{0:X8}\" value=\"{1:X8}\" />", Address.Value.Value, GenerateInstruction()) };
         }
 
-        public override string PackForDolphin()
+        public override IEnumerable<string> PackForDolphin()
         {
             Address.Value.AssertAbsolute();
             Target.AssertAbsolute();
 
-            return string.Format("0x{0:X8}:dword:0x{1:X8}", Address.Value.Value, GenerateInstruction());
+            return new string[] { string.Format("0x{0:X8}:dword:0x{1:X8}", Address.Value.Value, GenerateInstruction()) };
         }
 
         public override IEnumerable<ulong> PackGeckoCodes()

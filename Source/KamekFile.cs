@@ -196,13 +196,13 @@ namespace Kamek
 
                 else
                 {
-                    elements.Add(Util.PackLargeWriteForRiivolution(_baseAddress, _codeBlob));
+                    elements.AddRange(Util.PackLargeWriteForRiivolution(_baseAddress, _codeBlob));
                 }
             }
 
             // add individual patches
             foreach (var pair in _commands)
-                elements.Add(pair.Value.PackForRiivolution());
+                elements.AddRange(pair.Value.PackForRiivolution());
 
             return InjectLinesIntoTemplate(template, elements.ToArray(), "Riivolution XML");
         }
@@ -217,12 +217,12 @@ namespace Kamek
             if (_codeBlob.Length > 0)
             {
                 // add the big patch
-                elements.Add(Util.PackLargeWriteForDolphin(_baseAddress, _codeBlob));
+                elements.AddRange(Util.PackLargeWriteForDolphin(_baseAddress, _codeBlob));
             }
 
             // add individual patches
             foreach (var pair in _commands)
-                elements.Add(pair.Value.PackForDolphin());
+                elements.AddRange(pair.Value.PackForDolphin());
 
             return InjectLinesIntoTemplate(template, elements.ToArray(), "Dolphin INI");
         }

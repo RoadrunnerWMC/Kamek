@@ -144,7 +144,7 @@ namespace Kamek
             }
         }
 
-        public static string PackLargeWriteForRiivolution(Word address, byte[] data)
+        public static IEnumerable<string> PackLargeWriteForRiivolution(Word address, byte[] data)
         {
             if (address.Type == WordType.RelativeAddr)
                 throw new InvalidOperationException("cannot pack a dynamically linked data blob as a Riivolution patch");
@@ -153,10 +153,11 @@ namespace Kamek
             for (int i = 0; i < data.Length; i++)
                 sb.AppendFormat("{0:X2}", data[i]);
 
-            return string.Format("<memory offset=\"0x{0:X8}\" value=\"{1}\" />", address.Value, sb.ToString());
+            return new string[] { string.Format("<memory offset=\"0x{0:X8}\" value=\"{1}\" />", address.Value, sb.ToString()) };
+
         }
 
-        public static string PackLargeWriteForDolphin(Word address, byte[] data)
+        public static IEnumerable<string> PackLargeWriteForDolphin(Word address, byte[] data)
         {
             if (address.Type == WordType.RelativeAddr)
                 throw new InvalidOperationException("cannot pack a dynamically linked data blob as a Dolphin patch");
@@ -193,7 +194,7 @@ namespace Kamek
                 elements.Add(sb.ToString());
             }
 
-            return string.Join("\n", elements);
+            return elements;
         }
 
         public static IEnumerable<ulong> PackLargeWriteForGeckoCodes(Word address, byte[] data)

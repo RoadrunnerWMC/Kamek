@@ -53,8 +53,8 @@ namespace Kamek.Commands
         }
 
         public abstract void WriteArguments(BinaryWriter bw);
-        public abstract string PackForRiivolution();
-        public abstract string PackForDolphin();
+        public abstract IEnumerable<string> PackForRiivolution();
+        public abstract IEnumerable<string> PackForDolphin();
         public abstract IEnumerable<ulong> PackGeckoCodes();
         public abstract IEnumerable<ulong> PackActionReplayCodes();
         public abstract bool Apply(KamekFile file);

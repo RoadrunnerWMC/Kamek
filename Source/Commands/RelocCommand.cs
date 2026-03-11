@@ -23,12 +23,12 @@ namespace Kamek.Commands
             bw.WriteBE(Target.Value);
         }
 
-        public override string PackForRiivolution()
+        public override IEnumerable<string> PackForRiivolution()
         {
             throw new NotImplementedException();
         }
 
-        public override string PackForDolphin()
+        public override IEnumerable<string> PackForDolphin()
         {
             throw new NotImplementedException();
         }
