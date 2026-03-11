@@ -94,6 +94,8 @@ def kamek_dynamic_link(o_files: list[Path], *, externals: Path, versions: Path, 
 
 
 def main() -> None:
+    do_bless = '--bless' in sys.argv
+
     for test_dir in sorted(Path().iterdir()):
         if not test_dir.is_dir():
             continue
@@ -135,7 +137,7 @@ def main() -> None:
 
         expected_dir = test_dir / 'expected'
 
-        if '--bless' in sys.argv:
+        if do_bless:
             shutil.rmtree(expected_dir, ignore_errors=True)
             out_dir.rename(expected_dir)
 
@@ -148,7 +150,10 @@ def main() -> None:
                 if expected_file.read_bytes() != actual_file.read_bytes():
                     raise ValueError(f'{expected_file} and {actual_file} are different!')
 
-    print('All tests passed successfully')
+    if do_bless:
+        print('All tests blessed')
+    else:
+        print('All tests passed successfully')
 
 
 main()
