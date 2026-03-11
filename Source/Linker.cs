@@ -73,7 +73,107 @@ namespace Kamek
         public long BssSize { get { return _bssEnd - _bssStart; } }
 
 
-        #region Collecting Sections
+        #region Collecting Injection Sections
+
+        [Flags]
+        public enum InjectionFlags : uint
+        {
+            KM_INJECT_STRIP_BLR_PAST = 1,
+            KM_INJECT_ADD_PADDING = 2
+        }
+
+        public struct InjectedSection
+        {
+            public uint Address;
+            public byte[] Data;
+        }
+
+        private List<InjectedSection> _injectedSections = new List<InjectedSection>();
+        public IReadOnlyList<InjectedSection> InjectedSections { get { return _injectedSections; } }
+
+        private void ImportInjectedSections()
+        {
+            foreach (var elf in _modules)
+            {
+                foreach (var injectionSection in (from s in elf.Sections
+                                                  where s.name.StartsWith(".km_inject_") && !s.name.EndsWith("_meta")
+                                                  select s))
+                {
+                    Elf.ElfSection metaSection = (from s in elf.Sections
+                                                  where s.name == $"{injectionSection.name}_meta"
+                                                  select s).Single();
+
+                    var numValues = Util.ExtractUInt32(metaSection.data, 0);
+                    if (numValues < 4)
+                        continue;
+
+                    var startAddr = Util.ExtractUInt32(metaSection.data, 4);
+                    var endAddr = Util.ExtractUInt32(metaSection.data, 8);
+                    var flags = (InjectionFlags)Util.ExtractUInt32(metaSection.data, 12);
+                    var pad = Util.ExtractUInt32(metaSection.data, 16);
+
+                    ProcessSectionInjection(elf, injectionSection, startAddr, endAddr, flags, pad);
+                }
+            }
+        }
+
+        private void ProcessSectionInjection(Elf elf, Elf.ElfSection sec, uint start, uint end, InjectionFlags flags, uint pad)
+        {
+            uint startPreMap = start;
+            uint sizePreMap = end - start;
+
+            start = Mapper.Remap(start);
+            end = Mapper.Remap(end);
+
+            uint sizePostMap = end - start;
+            if (sizePreMap != sizePostMap)
+                throw new InvalidDataException($"Injected code range at 0x{startPreMap:x} changes size when remapped (0x{sizePreMap:x} -> 0x{sizePostMap:x})");
+
+            EnforceSectionInjectionSize(sec, start, end - start + 4, flags, pad);
+
+            _injectedSections.Add(new InjectedSection { Address=start, Data=sec.data });
+            _sectionBases[sec] = new Word(WordType.AbsoluteAddr, start);
+        }
+
+        private void EnforceSectionInjectionSize(Elf.ElfSection sec, uint start, uint requestedSize, InjectionFlags flags, uint pad)
+        {
+            if (sec.sh_size < requestedSize)
+            {
+                // Section data is too short
+
+                if ((flags & InjectionFlags.KM_INJECT_ADD_PADDING) != 0)
+                {
+                    // Pad it with the user-provided pad value
+                    Array.Resize(ref sec.data, (int)requestedSize);
+                    for (uint offs = sec.sh_size; offs < requestedSize; offs += 4)
+                        Util.InjectUInt32(sec.data, offs, pad);
+                    sec.sh_size = requestedSize;
+                }
+            }
+            else if (sec.sh_size > requestedSize)
+            {
+                // Section data is too long
+
+                if ((flags & InjectionFlags.KM_INJECT_STRIP_BLR_PAST) != 0
+                        && sec.sh_size == requestedSize + 4
+                        && Util.ExtractUInt32(sec.data, requestedSize) == 0x4e800020)
+                {
+                    // Section data is too long, but by exactly one "blr" instruction. Instead of
+                    // erroring, make an exception and just trim the blr instead. (This way, users
+                    // don't need to put a "nofralloc" in every single kmWriteDefAsm call.)
+                    Array.Resize(ref sec.data, (int)requestedSize);
+                    sec.sh_size = requestedSize;
+                }
+                else
+                {
+                    throw new InvalidDataException($"Injected code at 0x{start:x} doesn't fit (0x{sec.sh_size:x} > 0x{requestedSize:x})");
+                }
+            }
+        }
+        #endregion
+
+
+        #region Collecting Other Sections
         private Dictionary<Elf.ElfSection, Word> _sectionBases = new Dictionary<Elf.ElfSection, Word>();
         private List<Elf.ElfSection> _hookSections = new List<Elf.ElfSection>();
 
@@ -163,6 +263,7 @@ namespace Kamek
             }
 
             ImportHookSections();
+            ImportInjectedSections();
         }
         #endregion
 
