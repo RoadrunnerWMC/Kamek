@@ -23,7 +23,7 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Setup .NET
       uses: actions/setup-dotnet@v5
       with:
@@ -31,7 +31,7 @@ jobs:
     - name: Build Kamek for ${{ matrix.build-name }}
       shell: bash
       run: ./build_release.sh ${{ matrix.rid }}
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v6
       with:
         name: Kamek-${{ matrix.rid }}
         path: ${{ github.workspace }}/release
