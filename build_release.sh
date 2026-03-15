@@ -18,4 +18,4 @@ cd "bin/publish"
 rm -f *.pdb
 cp Kamek* "$ROOT/release"
 cd "$ROOT"
-cp -r examples k_stdlib loader shield-fix README.md preproc_demo.cpp release
+cp -r examples k_stdlib loader shield-fix LICENSE README.md preproc_demo.cpp release
