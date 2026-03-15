@@ -1,5 +1,7 @@
 # Kamek
-a nice code injection engine for Wii games - (c) Treeki 2010-2021
+a nice code injection engine for GameCube and Wii games - originally created by
+Ninji (nee Treeki) 2010-2021, now maintained by RoadrunnerWMC and various other
+folks
 
 ### Introduction
 
