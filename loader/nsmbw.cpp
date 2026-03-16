@@ -184,8 +184,6 @@ static const loaderFunctionsEx *sFuncs;
 versionInfo checkVersion() {
     versionInfo version;
 
-    // default is "PALv0"
-    version.pair = 'P\0';
     switch (*((u32*)0x800CF6CC))
     {
         case 0x40820030: version.pair = 'P\1'; break;
