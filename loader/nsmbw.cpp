@@ -29,10 +29,8 @@ void *allocAdapter(u32 size, bool isForCode, const loaderFunctions *funcs) {
     const loaderFunctionsEx *funcsEx = (const loaderFunctionsEx *)funcs;
     void **heapPtr = isForCode ? funcsEx->mHeap_g_gameHeaps : funcsEx->mHeap_g_archiveHeap;
     void *text = funcsEx->EGG_Heap_alloc(size, 0x20, *heapPtr);
-    if (isForCode) {
-        funcs->OSReport("Code start at %p\n", text);
+    if (isForCode)
         codeAddr = (u32)text;
-    }
     return text;
 }
 void freeAdapter(void *buffer, bool isForCode, const loaderFunctions *funcs) {

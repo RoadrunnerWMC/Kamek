@@ -171,7 +171,9 @@ void loadKamekBinary(const loaderFunctions *funcs, const void *binary, u32 binar
 
     u32 textSize = header->codeSize + header->bssSize;
     u32 text = (u32)funcs->kamekAlloc(textSize, true, funcs);
-    if (!text)
+    if (text)
+        funcs->OSReport("code start: %p\n", text);
+    else
         kamekError(funcs, "FATAL ERROR: Out of code memory");
 
     const u8 *input = ((const u8 *)binary) + sizeof(KBHeader);
