@@ -67,8 +67,8 @@ kmHook_2ui_2f: .macro type, arg0, arg1, arg2, arg3
 
 // kmCondWrite
 //   Write value to address, conditionally
-kmCondWritePointer: .macro addr, original, value
-	kmHook4 kctConditionalWrite, 1, addr, value, original
+kmCondWritePointer: .macro addr, original, ptr
+	kmHook4 kctConditionalWrite, 1, addr, ptr, original
 	.endm
 kmCondWrite32: .macro addr, original, value
 	kmHook4 kctConditionalWrite, 2, addr, value, original

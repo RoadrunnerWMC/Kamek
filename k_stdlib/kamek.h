@@ -54,7 +54,7 @@ struct _kmHook_4ui_2f_t { unsigned int a; unsigned int b; unsigned int c; unsign
 
 // kmCondWrite
 //   Write value to address, conditionally
-#define kmCondWritePointer(addr, original, value) kmHook4(kctConditionalWrite, 1, (addr), (value), (original))
+#define kmCondWritePointer(addr, original, ptr) kmHook4(kctConditionalWrite, 1, (addr), (ptr), (original))
 #define kmCondWrite32(addr, original, value) kmHook4(kctConditionalWrite, 2, (addr), (value), (original))
 #define kmCondWrite16(addr, original, value) kmHook4(kctConditionalWrite, 3, (addr), (value), (original))
 #define kmCondWrite8(addr, original, value) kmHook4(kctConditionalWrite, 4, (addr), (value), (original))
