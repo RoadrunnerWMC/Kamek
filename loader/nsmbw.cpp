@@ -22,8 +22,8 @@ struct loaderFunctionsEx {
     u32* myBackGround_PhaseMethod;
 };
 
-// store the base address for custom code at 0x800014e0, for optional later use (e.g. for custom exception handlers)
-extern u32 codeAddr:0x800014e0;
+// store the base address for custom code at 0x800014E0, for optional later use (e.g. for custom exception handlers)
+extern u32 codeAddr:0x800014E0;
 
 void *allocAdapter(u32 size, bool isForCode, const loaderFunctions *funcs) {
     const loaderFunctionsEx *funcsEx = (const loaderFunctionsEx *)funcs;
@@ -42,7 +42,7 @@ void freeAdapter(void *buffer, bool isForCode, const loaderFunctions *funcs) {
 }
 
 
-const loaderFunctionsEx functions_p = {
+const loaderFunctionsEx functions_P = {
     {(OSReport_t) 0x8015F870,
     (OSFatal_t) 0x801AF710,
     (DVDConvertPathToEntrynum_t) 0x801CA7C0,
@@ -61,7 +61,7 @@ const loaderFunctionsEx functions_p = {
     (u32*) 0x800CA0B8,
     (u32*) 0x80328428
 };
-const loaderFunctionsEx functions_e = {
+const loaderFunctionsEx functions_E = {
     {(OSReport_t) 0x8015F730,
     (OSFatal_t) 0x801AF5D0,
     (DVDConvertPathToEntrynum_t) 0x801CA680,
@@ -81,7 +81,7 @@ const loaderFunctionsEx functions_e = {
     (u32*) 0x803280E0
 
 };
-const loaderFunctionsEx functions_j = {
+const loaderFunctionsEx functions_J = {
     {(OSReport_t) 0x8015F540,
     (OSFatal_t) 0x801AF3E0,
     (DVDConvertPathToEntrynum_t) 0x801CA490,
@@ -100,7 +100,7 @@ const loaderFunctionsEx functions_j = {
     (u32*) 0x800C9F48,
     (u32*) 0x80327E48
 };
-const loaderFunctionsEx functions_k = {
+const loaderFunctionsEx functions_K = {
     {(OSReport_t) 0x8015FC70,
     (OSFatal_t) 0x801AFB10,
     (DVDConvertPathToEntrynum_t) 0x801CABC0,
@@ -119,7 +119,7 @@ const loaderFunctionsEx functions_k = {
     (u32*) 0x800CA0D8,
     (u32*) 0x80334E10
 };
-const loaderFunctionsEx functions_w = {
+const loaderFunctionsEx functions_W = {
     {(OSReport_t) 0x8015FC70,
     (OSFatal_t) 0x801AFB10,
     (DVDConvertPathToEntrynum_t) 0x801CABC0,
@@ -139,7 +139,7 @@ const loaderFunctionsEx functions_w = {
     (u32*) 0x803331D0
 };
 
-const loaderFunctionsEx functions_c = {
+const loaderFunctionsEx functions_C = {
     {(OSReport_t) 0x80161A90,
     (OSFatal_t) 0x801B1930,
     (DVDConvertPathToEntrynum_t) 0x801CC9E0,
@@ -164,8 +164,8 @@ void unknownVersion() {
     // we can't output a message on screen without a valid OSFatal addr;
     // all we can really do is set the screen to solid red before we die
     // (note: Dolphin Emulator currently ignores this)
-    unsigned int *HW_VISOLID = (unsigned int*)0xcd000024;
-    *HW_VISOLID = 0x5aef5101;
+    unsigned int *HW_VISOLID = (unsigned int*)0xCD000024;
+    *HW_VISOLID = 0x5AEF5101;
 
     for (;;);
 }
@@ -202,7 +202,7 @@ versionInfo checkVersion() {
                 default: unknownVersion();
             }
             break;
-        case 0x4182000c: version.region = 'C'; break;
+        case 0x4182000C: version.region = 'C'; break;
         default: unknownVersion();
     }
 
@@ -229,12 +229,12 @@ void loadIntoNSMBW() {
     // choose functions
     // (these are all the same in v1 and v2, thankfully)
     switch (sVersionInfo.region) {
-        case 'P': sFuncs = &functions_p; break;
-        case 'E': sFuncs = &functions_e; break;
-        case 'J': sFuncs = &functions_j; break;
-        case 'K': sFuncs = &functions_k; break;
-        case 'W': sFuncs = &functions_w; break;
-        case 'C': sFuncs = &functions_c; break;
+        case 'P': sFuncs = &functions_P; break;
+        case 'E': sFuncs = &functions_E; break;
+        case 'J': sFuncs = &functions_J; break;
+        case 'K': sFuncs = &functions_K; break;
+        case 'W': sFuncs = &functions_W; break;
+        case 'C': sFuncs = &functions_C; break;
     }
 
     // report some info
@@ -272,4 +272,4 @@ void loadIntoNSMBW() {
     sFuncs->__flush_cache(sFuncs->myBackGround_PhaseMethod, 0x50);
 }
 
-kmBranch(0x800042f4, loadIntoNSMBW);
+kmBranch(0x800042F4, loadIntoNSMBW);
