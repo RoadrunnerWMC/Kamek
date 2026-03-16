@@ -15,6 +15,13 @@ struct KBHeader {
     u32 _pad[2];
 };
 
+struct DVDHandle
+{
+    u32 _unk[12];
+    u32 address, length;
+    u32 _unk38;
+};
+
 
 #define kAddr32 1
 #define kAddr16Lo 4

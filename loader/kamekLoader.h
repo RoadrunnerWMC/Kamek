@@ -1,12 +1,7 @@
 #include <kamek.h>
 #include <kamek_sdk.h>
 
-struct DVDHandle
-{
-    u32 _unk[12];
-    u32 address, length;
-    u32 _unk38;
-};
+struct DVDHandle;
 
 struct loaderFunctions;
 
