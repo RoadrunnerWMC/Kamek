@@ -101,7 +101,7 @@ kmWrite8: .macro addr, value
 	kmHook3 kctWrite, 4, addr, value
 	.endm
 kmWriteFloat: .macro addr, value
-	kmHook_2ui_1f kctWrite, 4, addr, value
+	kmHook_2ui_1f kctWrite, 2, addr, value
 	.endm
 kmWriteNop: .macro addr
 	kmWrite32 addr, 0x60000000
