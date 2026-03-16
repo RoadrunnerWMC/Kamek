@@ -14,6 +14,7 @@ kmCondWrite32(0x80000100, 0x11111111, 0x22222222);
 kmCondWrite16(0x80000110, 0x3333, 0x4444);
 kmCondWrite8(0x80000120, 0x55, 0x66);
 kmCondWriteFloat(0x80000130, 7.7f, 8.8f);
+kmCondWriteNop(0x80000140, 0x99999999);
 
 kmWritePointer(0x80000200, 0x80000204);
 kmWritePointer(0x80000210, &externalSym);
