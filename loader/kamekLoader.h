@@ -28,5 +28,6 @@ struct loaderFunctions {
     KamekFree_t kamekFree;
 };
 
-void loadKamekBinaryFromDisc(const loaderFunctions *funcs, const char *path);
 
+void kamekError(const loaderFunctions *funcs, const char *str);
+void loadKamekBinaryFromDisc(const loaderFunctions *funcs, const char *path);
