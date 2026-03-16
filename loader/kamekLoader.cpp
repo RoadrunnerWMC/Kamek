@@ -4,6 +4,8 @@
 #define STRINGIFY_(x) #x
 #define STRINGIFY(x) STRINGIFY_(x)
 
+#define ALIGN_32(a) ((a + 31) & ~31)
+
 struct KBHeader {
     u32 magic1;
     u16 magic2;
@@ -250,7 +252,7 @@ void loadKamekBinaryFromDisc(const loaderFunctions *funcs, const char *path)
 
     funcs->OSReport("DVD file located: addr=%p, size=%d\n", handle.address, handle.length);
 
-    u32 length = handle.length, roundedLength = (handle.length + 0x1F) & ~0x1F;
+    u32 roundedLength = ALIGN_32(handle.length);
     void *buffer = funcs->kamekAlloc(roundedLength, false, funcs);
     if (!buffer)
         kamekError(funcs, "FATAL ERROR: Out of file memory");
